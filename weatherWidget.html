@@ -1,0 +1,96 @@
+<!DOCTYPE html> 
+<html>
+	<head>
+	<title>UI Candidate Tech Challenge</title>
+		<style>
+			body{margin:0;font-family:Arial;font-size:12px;width:268px;height:138px; overflow:hidden}
+			.fl{float:left;} .clr{clear:both}
+			#widgetContainer{background-color:#fff;padding:3px 10px;border:1px solid #ccc;border-radius:5px;box-shadow: 10px 10px 5px #999;}
+			#row1_cityName{font-size:22px;}
+			#currTemp{font-size:70px;line-height:70px;margin-right:10px;}
+			#imgCont div{text-align:center}
+			#row3_forecast{text-align:center}
+			#row3_forecast table td{padding:5px 0;}
+			#row3_forecast table td.borderCol{border-right:1px dotted #ccc}
+		</style>
+	<head>
+	<body>
+		<script>
+			var weatherWidget=(function(){
+				var DOM=function (id){return document.getElementById(id)},
+				apiCallback=function(response){
+					var data=response.query.results.channel.item;
+					var widgetHTML='<div id="widgetContainer">';
+						// Draw Row 1
+						var titleArr=data.title.split(' ');
+						widgetHTML+='<div id="row1_cityName">'+titleArr[2]+'&nbsp;'+titleArr[3]+'</div>';
+						//Row 2
+						var currTemp=data.condition.temp;
+						var myRegex = /<img[^>]+src="(http:\/\/[^">]+)"/g;
+						var tempImg=myRegex.exec(data.description)[1];
+						
+						widgetHTML+='<div id="row2_currTemp"><div id="currTemp" class="fl">'+currTemp+'&deg;</div><div id="imgCont" class="fl"><div><img src="'+tempImg+'" alt="'+data.condition.text+'" title="'+data.condition.text+'" /></div><div>'+data.condition.text+'</div></div><div class="clr"></div></div>';
+						//Row 3
+						widgetHTML+='<div id="row3_forecast">';
+							var forecastTbl='<table cellpadding="0" cellspacing="0" width="100%"><tr>';
+							for(var x=0;x<data.forecast.length;x++){
+								var forcastData=data.forecast[x];
+								var tdd=(x == data.forecast.length-1)? '<td>':'<td class="borderCol">';
+								forecastTbl+= tdd+'<div><strong>'+forcastData.day+'</strong></div><div>'+forcastData.low+'&deg;/'+forcastData.high+'&deg;</div></td>';
+							}
+							forecastTbl+='</tr></table>';
+						widgetHTML+=forecastTbl+'</div>';
+					widgetHTML+='</div>';
+					document.body.innerHTML=widgetHTML;
+					setWidgetPosition();
+				},
+				getWinParams = function () {
+					var w = top,
+					d = top.document,
+					e = d.documentElement,
+					g = d.getElementsByTagName('body')[0],
+					x = (w.innerWidth || e.clientWidth || g.clientWidth) - 17,
+					y = w.innerHeight || e.clientHeight || g.clientHeight;
+					return {
+						'width' : x,
+						'height' : y
+					};
+				},
+				createOverlay=function(winParams){
+					var overlay=document.createElement('div');
+					overlay.id='overlayBg';
+					overlay.style.backgroundColor='#ccc';
+					overlay.style.opacity=0.5;
+					overlay.style.position='fixed';
+					overlay.style.top=0;
+					overlay.style.left=0;
+					overlay.style.width=winParams.width+'px';
+					overlay.style.height=winParams.height+'px';
+					overlay.style.zIndex=99;
+					top.document.getElementsByTagName('body')[0].appendChild(overlay);
+				},
+				setWidgetPosition=function(){
+					var winParams=getWinParams();
+					createOverlay(winParams);
+					var obj= top.document.getElementById('cvent_weatherFrame');
+					obj.style.visibility='hidden';
+					obj.style.display='block';
+					var objTop=((winParams.height / 2) - (obj.offsetHeight / 2)) + 'px';
+					var objLeft=((winParams.width / 2) - (obj.offsetWidth / 2)) + 'px';
+					obj.style.position='absolute';
+					obj.style.top=objTop;
+					obj.style.left=objLeft;
+					obj.style.zIndex=999;
+					obj.style.visibility='visible';
+				},
+				init=function(){
+					var srp=document.createElement('script');
+					srp.type="text/javascript";
+					srp.src='http://query.yahooapis.com/v1/public/yql?q=select item from weather.forecast where location%3D"22102"&format=json&callback=weatherWidget.apiCallback';
+					document.getElementsByTagName('head')[0].appendChild(srp);
+				}
+				return {'init':init(),'apiCallback':apiCallback}
+			})();
+		</script>
+</body>
+</html>
